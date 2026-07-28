@@ -54,7 +54,7 @@ public sealed class LeaderboardComponent : IComponent
 
     private void Draw(Graphics g,LiveSplitState s,float width,float height)
     {
-        g.SmoothingMode=SmoothingMode.HighQuality; g.TextRenderingHint=System.Drawing.Text.TextRenderingHint.ClearTypeGridFit; int rh=Settings.RowHeight,y=0; Font normal=s.LayoutSettings.TextFont; using Font bold=new(normal,FontStyle.Bold); using Font header=new(normal,FontStyle.Bold); Color shadow=Color.FromArgb(160,Color.Black);
+        g.SmoothingMode=SmoothingMode.HighQuality; g.TextRenderingHint=s.LayoutSettings.AntiAliasing?System.Drawing.Text.TextRenderingHint.AntiAlias:System.Drawing.Text.TextRenderingHint.ClearTypeGridFit; int rh=Settings.RowHeight,y=0; Font normal=s.LayoutSettings.TextFont; using Font bold=new(normal,FontStyle.Bold); using Font header=new(normal,FontStyle.Bold); Color shadow=Color.FromArgb(160,Color.Black);
         if(Settings.BackgroundColor.A>0) Fill(g,new RectangleF(0,0,width,height),Settings.BackgroundColor);
         float rankW=Math.Min(Settings.RankWidth,Math.Max(20,width-40)),timeW=Math.Min(Settings.TimeWidth,Math.Max(20,width-rankW-20)),gap=7; float playerX=gap+rankW,playerW=Math.Max(10,width-rankW-timeW-gap*2),timeX=width-timeW-gap;
         if(Settings.ShowHeader){DrawText(g,"Rank",header,Settings.HeaderTextColor,shadow,new RectangleF(gap,y,rankW,rh),Align(Settings.RankAlignment),s.LayoutSettings.DropShadows);DrawText(g,"Player",header,Settings.HeaderTextColor,shadow,new RectangleF(playerX,y,playerW,rh),Align(Settings.PlayerAlignment),s.LayoutSettings.DropShadows);DrawText(g,"Time",header,Settings.HeaderTextColor,shadow,new RectangleF(timeX,y,timeW,rh),Align(Settings.TimeAlignment),s.LayoutSettings.DropShadows);y+=rh;}
