@@ -1,46 +1,40 @@
 # LiveSplit.Leaderboard
 
-A LiveSplit desktop component that shows the top Speedrun.com runs for the game/category selected in the current splits, styled as a compact **Rank / Player / Time** table.
+A customizable LiveSplit component that displays Speedrun.com leaderboard entries for the game and category selected in the current splits.
 
 ## Features
 
-- Top 1–20 leaderboard entries
-- Top-three trophy markers
-- Automatic game/category detection from the current LiveSplit run
-- Optional platform, emulator, region, variable, and subcategory filtering
-- Real Time, RTA without loads, Game Time, or leaderboard-default timing
-- Configurable refresh interval and row height
-- Layout colors/fonts and drop shadows are respected
+- Automatic game and category detection
+- Configurable starting rank and number of entries
+- Optional surrounding-ranks mode for a selected runner
+- Speedrun.com username highlighting
+- Optional country flags
+- Adjustable rank and time column widths
+- Separate text alignment for each column
+- Show or hide the table header
+- Custom colors for:
+  - Header
+  - Rank
+  - Player name
+  - Time
+  - Background
+  - Alternating rows
+  - Highlighted runner
+- Optional alternating row backgrounds
+- Configurable row height
+- Real Time, Real Time without Loads, Game Time, or leaderboard-default timing
+- Optional milliseconds
+- Compact or written time formatting
+- Platform, region, emulator, variable, and subcategory filtering
+- Automatic background refresh
 
-## Build
+## Installation
 
-This repository is intended to sit next to a recursive clone of LiveSplit:
+1. Download `LiveSplit.Leaderboard.dll` from the latest GitHub release.
+2. Copy the DLL into LiveSplit's `Components` folder.
+3. Restart LiveSplit.
+4. Open the Layout Editor.
+5. Select:
 
 ```text
-parent/
-├─ LiveSplit/                 # git clone --recursive https://github.com/LiveSplit/LiveSplit.git
-└─ LiveSplit.Leaderboard/
-```
-
-Requirements used by current LiveSplit:
-
-- .NET 10 SDK
-- .NET Framework 4.8.1 Developer Pack
-
-Build:
-
-```powershell
-dotnet build .\LiveSplit.Leaderboard.slnx -c Release
-```
-
-To use a different LiveSplit checkout location:
-
-```powershell
-dotnet build .\LiveSplit.Leaderboard.slnx -c Release -p:LsRoot="C:\path\to\LiveSplit"
-```
-
-Copy the resulting `LiveSplit.Leaderboard.dll` into LiveSplit's `Components` folder, restart LiveSplit, then add **Information → Leaderboard** in the Layout Editor.
-
-## Notes
-
-The game and category must be linked to Speedrun.com in LiveSplit's Splits Editor. The component fetches data in the background and refreshes every five minutes by default.
+Add → Information → Leaderboard
