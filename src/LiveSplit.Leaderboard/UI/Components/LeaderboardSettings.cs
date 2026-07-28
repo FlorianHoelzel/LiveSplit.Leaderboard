@@ -55,7 +55,8 @@ public sealed class LeaderboardSettings : UserControl
 
     public LeaderboardSettings()
     {
-        Dock = DockStyle.Fill; AutoScroll = true; AutoSize = true;
+        Dock = DockStyle.Fill;
+        MinimumSize = new Size(420, 430);
         startRank = Number(1, 10000, 1); entryCount = Number(1, 100, 5);
         surroundingAbove = Number(0, 50, 2); surroundingBelow = Number(0, 50, 2);
         refreshMinutes = Number(1, 60, 5); rowHeight = Number(18, 60, 27);
@@ -81,23 +82,112 @@ public sealed class LeaderboardSettings : UserControl
         highlightTextColorButton = ColorButton(() => HighlightTextColor, c => HighlightTextColor = c);
         highlightBackgroundColorButton = ColorButton(() => HighlightBackgroundColor, c => HighlightBackgroundColor = c, true);
 
-        var table = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = true, ColumnCount = 2, Padding = new Padding(7) };
-        table.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize)); table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        AddSection(table, "Entries"); AddRow(table, "Start at rank", startRank); AddRow(table, "Number of entries", entryCount);
-        AddWide(table, surroundingMode); AddRow(table, "Highlighted username", highlightUsername); AddRow(table, "Entries above", surroundingAbove); AddRow(table, "Entries below", surroundingBelow);
-        AddSection(table, "Layout"); AddWide(table, showHeader); AddRow(table, "Row height", rowHeight); AddRow(table, "Rank column width", rankWidth); AddRow(table, "Time column width", timeWidth);
-        AddRow(table, "Rank alignment", rankAlignment); AddRow(table, "Player alignment", playerAlignment); AddRow(table, "Time alignment", timeAlignment);
-        AddSection(table, "Colors"); AddRow(table, "Header text", headerColorButton); AddRow(table, "Player text", rowColorButton); AddRow(table, "Rank text", rankColorButton); AddRow(table, "Time text", timeColorButton); AddRow(table, "Background", backgroundColorButton);
-        AddWide(table, alternateRows); AddRow(table, "Alternate row color", alternateColorButton); AddRow(table, "Alternate opacity (0-255)", alternateOpacity);
-        AddSection(table, "Highlighted runner"); AddRow(table, "Highlight text", highlightTextColorButton); AddRow(table, "Highlight background", highlightBackgroundColorButton); AddWide(table, highlightBold);
-        AddSection(table, "Time and player names"); AddRow(table, "Timing method", timingMethod); AddRow(table, "Time format", timeFormat); AddWide(table, showMilliseconds); AddWide(table, hoursOnlyWhenNeeded); AddRow(table, "Player name", playerNameMode); AddWide(table, showCountryFlag);
-        AddSection(table, "Leaderboard filters"); AddWide(table, filterPlatform); AddWide(table, filterRegion); AddWide(table, filterVariables); AddWide(table, filterSubcategories); AddRow(table, "Refresh every (minutes)", refreshMinutes);
-        Controls.Add(table); RefreshColorButtons();
+        var tabs = new TabControl { Dock = DockStyle.Fill, Padding = new Point(12, 5) };
+        tabs.TabPages.Add(CreateEntriesPage());
+        tabs.TabPages.Add(CreateAppearancePage());
+        tabs.TabPages.Add(CreateContentPage());
+        Controls.Add(tabs);
+
+        surroundingMode.CheckedChanged += (_, __) => UpdateEnabledStates();
+        alternateRows.CheckedChanged += (_, __) => UpdateEnabledStates();
+        showHeader.CheckedChanged += (_, __) => UpdateEnabledStates();
+        RefreshColorButtons();
+        UpdateEnabledStates();
+    }
+
+    private TabPage CreateEntriesPage()
+    {
+        var page = Page("Entries");
+        var stack = Stack();
+        var range = Group("Displayed entries");
+        AddRow(range, "Start at rank", startRank);
+        AddRow(range, "Number of entries", entryCount);
+        AddWide(range, surroundingMode);
+        AddRow(range, "Highlighted username", highlightUsername);
+        AddRow(range, "Entries above", surroundingAbove);
+        AddRow(range, "Entries below", surroundingBelow);
+        AddGroup(stack, range);
+
+        var updating = Group("Updating");
+        AddRow(updating, "Refresh every", LabeledControl(refreshMinutes, "minutes"));
+        AddGroup(stack, updating);
+        page.Controls.Add(stack);
+        return page;
+    }
+
+    private TabPage CreateAppearancePage()
+    {
+        var page = Page("Appearance");
+        var stack = Stack();
+        var layout = Group("Rows and columns");
+        AddWide(layout, showHeader);
+        AddRow(layout, "Row height", LabeledControl(rowHeight, "pixels"));
+        AddRow(layout, "Rank column", LabeledControl(rankWidth, "pixels"));
+        AddRow(layout, "Time column", LabeledControl(timeWidth, "pixels"));
+        AddRow(layout, "Rank alignment", rankAlignment);
+        AddRow(layout, "Player alignment", playerAlignment);
+        AddRow(layout, "Time alignment", timeAlignment);
+        AddGroup(stack, layout);
+
+        var colors = Group("Colors");
+        AddRow(colors, "Header text", headerColorButton);
+        AddRow(colors, "Player text", rowColorButton);
+        AddRow(colors, "Rank text", rankColorButton);
+        AddRow(colors, "Time text", timeColorButton);
+        AddRow(colors, "Background", backgroundColorButton);
+        AddWide(colors, alternateRows);
+        AddRow(colors, "Alternate row", alternateColorButton);
+        AddRow(colors, "Alternate opacity", LabeledControl(alternateOpacity, "0–255"));
+        AddGroup(stack, colors);
+
+        var highlight = Group("Highlighted runner");
+        AddRow(highlight, "Text", highlightTextColorButton);
+        AddRow(highlight, "Background", highlightBackgroundColorButton);
+        AddWide(highlight, highlightBold);
+        AddGroup(stack, highlight);
+        page.Controls.Add(stack);
+        return page;
+    }
+
+    private TabPage CreateContentPage()
+    {
+        var page = Page("Content");
+        var stack = Stack();
+        var time = Group("Time");
+        AddRow(time, "Timing method", timingMethod);
+        AddRow(time, "Format", timeFormat);
+        AddWide(time, showMilliseconds);
+        AddWide(time, hoursOnlyWhenNeeded);
+        AddGroup(stack, time);
+
+        var players = Group("Player names");
+        AddRow(players, "Display name", playerNameMode);
+        AddWide(players, showCountryFlag);
+        AddGroup(stack, players);
+
+        var filters = Group("Leaderboard filters");
+        AddDescription(filters, "Use the current run's metadata to narrow the leaderboard.");
+        AddWide(filters, filterPlatform);
+        AddWide(filters, filterRegion);
+        AddWide(filters, filterVariables);
+        AddWide(filters, filterSubcategories);
+        AddGroup(stack, filters);
+        page.Controls.Add(stack);
+        return page;
+    }
+
+    private void UpdateEnabledStates()
+    {
+        surroundingAbove.Enabled = surroundingMode.Checked;
+        surroundingBelow.Enabled = surroundingMode.Checked;
+        alternateColorButton.Enabled = alternateRows.Checked;
+        alternateOpacity.Enabled = alternateRows.Checked;
+        headerColorButton.Enabled = showHeader.Checked;
     }
 
     private Button ColorButton(Func<Color> get, Action<Color> set, bool alpha = false)
     {
-        var b = new Button { Width = 90, Height = 24, Text = "Choose…" };
+        var b = new Button { Width = 104, Height = 25, Text = "Change…" };
         b.Click += (_, __) => { using var d = new ColorDialog { Color = get(), FullOpen = true, AllowFullOpen = true }; if (d.ShowDialog(this) == DialogResult.OK) { set(alpha ? d.Color : Color.FromArgb(255, d.Color)); RefreshColorButtons(); } };
         return b;
     }
@@ -112,9 +202,57 @@ public sealed class LeaderboardSettings : UserControl
     private static void Select(ComboBox c, string value) { if (c.Items.Contains(value)) c.SelectedItem = value; else c.SelectedIndex = 0; }
     private static NumericUpDown Number(decimal min, decimal max, decimal value) => new() { Minimum = min, Maximum = max, Value = value, Width = 80 };
     private static decimal Clamp(decimal value, decimal min, decimal max) => Math.Max(min, Math.Min(max, value));
-    private static void AddRow(TableLayoutPanel t, string label, Control control) { int r = t.RowCount++; t.RowStyles.Add(new RowStyle(SizeType.AutoSize)); t.Controls.Add(new Label { Text = label, AutoSize = true, Anchor = AnchorStyles.Left, Margin = new Padding(3, 7, 12, 3) }, 0, r); t.Controls.Add(control, 1, r); }
-    private static void AddWide(TableLayoutPanel t, Control c) { int r = t.RowCount++; t.RowStyles.Add(new RowStyle(SizeType.AutoSize)); t.Controls.Add(c, 0, r); t.SetColumnSpan(c, 2); }
-    private static void AddSection(TableLayoutPanel t, string text) { var l = new Label { Text = text, AutoSize = true, Font = new Font(SystemFonts.DefaultFont, FontStyle.Bold), Margin = new Padding(3, 12, 3, 4) }; AddWide(t, l); }
+    private static TabPage Page(string text) => new() { Text = text, Padding = new Padding(8), AutoScroll = true, UseVisualStyleBackColor = true };
+    private static TableLayoutPanel Stack()
+    {
+        var stack = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = true, ColumnCount = 1, GrowStyle = TableLayoutPanelGrowStyle.AddRows };
+        stack.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        return stack;
+    }
+    private static TableLayoutPanel Group(string text)
+    {
+        var table = new TableLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, ColumnCount = 2, Padding = new Padding(10, 6, 10, 8), Tag = text };
+        table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 42));
+        table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 58));
+        return table;
+    }
+    private static void AddGroup(TableLayoutPanel stack, TableLayoutPanel content)
+    {
+        int row = stack.RowCount++;
+        stack.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        var group = new GroupBox { Text = (string)content.Tag, Dock = DockStyle.Fill, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Padding = new Padding(6), Margin = new Padding(0, 0, 0, 9) };
+        group.Controls.Add(content);
+        stack.Controls.Add(group, 0, row);
+    }
+    private static Control LabeledControl(Control control, string suffix)
+    {
+        var panel = new FlowLayoutPanel { AutoSize = true, WrapContents = false, Margin = Padding.Empty };
+        control.Margin = new Padding(0, 0, 6, 0);
+        panel.Controls.Add(control);
+        panel.Controls.Add(new Label { Text = suffix, AutoSize = true, Margin = new Padding(0, 5, 0, 0), ForeColor = SystemColors.GrayText });
+        return panel;
+    }
+    private static void AddRow(TableLayoutPanel t, string label, Control control)
+    {
+        int r = t.RowCount++;
+        t.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        t.Controls.Add(new Label { Text = label, AutoSize = true, Anchor = AnchorStyles.Left, Margin = new Padding(3, 7, 12, 5) }, 0, r);
+        control.Anchor = AnchorStyles.Left;
+        control.Margin = new Padding(3, 3, 3, 5);
+        t.Controls.Add(control, 1, r);
+    }
+    private static void AddWide(TableLayoutPanel t, Control c)
+    {
+        int r = t.RowCount++;
+        t.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        c.Margin = new Padding(3, 4, 3, 5);
+        t.Controls.Add(c, 0, r);
+        t.SetColumnSpan(c, 2);
+    }
+    private static void AddDescription(TableLayoutPanel t, string text)
+    {
+        AddWide(t, new Label { Text = text, AutoSize = true, ForeColor = SystemColors.GrayText, MaximumSize = new Size(330, 0) });
+    }
 
     public XmlNode GetSettings(XmlDocument d)
     {
