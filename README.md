@@ -34,7 +34,6 @@ A customizable LiveSplit component that displays Speedrun.com leaderboard entrie
 2. Copy the DLL into LiveSplit's `Components` folder.
 3. Restart LiveSplit.
 4. Open the Layout Editor.
-5. Select:
 
 ```text
 Add → Information → Leaderboard
