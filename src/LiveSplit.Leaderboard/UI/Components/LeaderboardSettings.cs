@@ -10,7 +10,7 @@ namespace LiveSplit.Leaderboard.UI.Components;
 public sealed class LeaderboardSettings : UserControl
 {
     private readonly NumericUpDown startRank, entryCount, surroundingAbove, surroundingBelow, refreshMinutes, rowHeight, rankWidth, timeWidth, alternateOpacity;
-    private readonly CheckBox filterPlatform, filterRegion, filterVariables, filterSubcategories, showHeader, alternateRows, surroundingMode, showMilliseconds, hoursOnlyWhenNeeded, showCountryFlag, highlightBold;
+    private readonly CheckBox filterPlatform, filterRegion, filterVariables, filterSubcategories, showHeader, alternateRows, surroundingMode, showMilliseconds, hoursOnlyWhenNeeded, showCountryFlag, highlightBold, showHighlightBackground;
     private readonly TextBox highlightUsername;
     private readonly ComboBox timingMethod, rankAlignment, playerAlignment, timeAlignment, timeFormat, playerNameMode;
     private readonly Button headerColorButton, rowColorButton, rankColorButton, timeColorButton, backgroundColorButton, alternateColorButton, highlightTextColorButton, highlightBackgroundColorButton;
@@ -35,6 +35,7 @@ public sealed class LeaderboardSettings : UserControl
     public bool HoursOnlyWhenNeeded { get => hoursOnlyWhenNeeded.Checked; set => hoursOnlyWhenNeeded.Checked = value; }
     public bool ShowCountryFlag { get => showCountryFlag.Checked; set => showCountryFlag.Checked = value; }
     public bool HighlightBold { get => highlightBold.Checked; set => highlightBold.Checked = value; }
+    public bool ShowHighlightBackground { get => showHighlightBackground.Checked; set => showHighlightBackground.Checked = value; }
     public string HighlightUsername { get => highlightUsername.Text.Trim(); set => highlightUsername.Text = value ?? ""; }
     public string TimingMethod { get => Selected(timingMethod, "Leaderboard Default"); set => Select(timingMethod, value); }
     public string RankAlignment { get => Selected(rankAlignment, "Left"); set => Select(rankAlignment, value); }
@@ -66,7 +67,7 @@ public sealed class LeaderboardSettings : UserControl
         showHeader = Check("Show Rank / Player / Time header", true); alternateRows = Check("Alternate row shading", true);
         surroundingMode = Check("Show entries surrounding highlighted runner"); showMilliseconds = Check("Show milliseconds");
         hoursOnlyWhenNeeded = Check("Show hours only when needed", true); showCountryFlag = Check("Show country flag");
-        highlightBold = Check("Bold highlighted runner", true); highlightUsername = new TextBox { Width = 180 };
+        highlightBold = Check("Bold highlighted runner", true); showHighlightBackground = Check("Show highlighted runner background", true); highlightUsername = new TextBox { Width = 180 };
         timingMethod = Combo("Leaderboard Default", "Real Time", "Real Time Without Loads", "Game Time");
         rankAlignment = Combo("Left", "Center", "Right"); playerAlignment = Combo("Left", "Center", "Right"); playerAlignment.SelectedItem = "Left";
         timeAlignment = Combo("Left", "Center", "Right"); timeAlignment.SelectedItem = "Right";
@@ -91,6 +92,7 @@ public sealed class LeaderboardSettings : UserControl
         surroundingMode.CheckedChanged += (_, __) => UpdateEnabledStates();
         alternateRows.CheckedChanged += (_, __) => UpdateEnabledStates();
         showHeader.CheckedChanged += (_, __) => UpdateEnabledStates();
+        showHighlightBackground.CheckedChanged += (_, __) => UpdateEnabledStates();
         RefreshColorButtons();
         UpdateEnabledStates();
     }
@@ -142,6 +144,7 @@ public sealed class LeaderboardSettings : UserControl
 
         var highlight = Group("Highlighted runner");
         AddRow(highlight, "Text", highlightTextColorButton);
+        AddWide(highlight, showHighlightBackground);
         AddRow(highlight, "Background", highlightBackgroundColorButton);
         AddWide(highlight, highlightBold);
         AddGroup(stack, highlight);
@@ -183,6 +186,7 @@ public sealed class LeaderboardSettings : UserControl
         alternateColorButton.Enabled = alternateRows.Checked;
         alternateOpacity.Enabled = alternateRows.Checked;
         headerColorButton.Enabled = showHeader.Checked;
+        highlightBackgroundColorButton.Enabled = showHighlightBackground.Checked;
     }
 
     private Button ColorButton(Func<Color> get, Action<Color> set, bool alpha = false)
@@ -256,16 +260,16 @@ public sealed class LeaderboardSettings : UserControl
 
     public XmlNode GetSettings(XmlDocument d)
     {
-        var p = d.CreateElement("Settings"); Add(d,p,"Version",2);
+        var p = d.CreateElement("Settings"); Add(d,p,"Version",3);
         Add(d,p,"StartRank",StartRank); Add(d,p,"EntryCount",EntryCount); Add(d,p,"SurroundingMode",SurroundingMode); Add(d,p,"SurroundingAbove",SurroundingAbove); Add(d,p,"SurroundingBelow",SurroundingBelow); Add(d,p,"HighlightUsername",HighlightUsername);
         Add(d,p,"RefreshMinutes",RefreshMinutes); Add(d,p,"RowHeight",RowHeight); Add(d,p,"RankWidth",RankWidth); Add(d,p,"TimeWidth",TimeWidth); Add(d,p,"FilterPlatform",FilterPlatform); Add(d,p,"FilterRegion",FilterRegion); Add(d,p,"FilterVariables",FilterVariables); Add(d,p,"FilterSubcategories",FilterSubcategories); Add(d,p,"ShowHeader",ShowHeader); Add(d,p,"AlternateRows",AlternateRows); Add(d,p,"AlternateOpacity",AlternateOpacity); Add(d,p,"TimingMethod",TimingMethod);
-        Add(d,p,"RankAlignment",RankAlignment); Add(d,p,"PlayerAlignment",PlayerAlignment); Add(d,p,"TimeAlignment",TimeAlignment); Add(d,p,"TimeFormat",TimeFormat); Add(d,p,"ShowMilliseconds",ShowMilliseconds); Add(d,p,"HoursOnlyWhenNeeded",HoursOnlyWhenNeeded); Add(d,p,"PlayerNameMode",PlayerNameMode); Add(d,p,"ShowCountryFlag",ShowCountryFlag); Add(d,p,"HighlightBold",HighlightBold);
+        Add(d,p,"RankAlignment",RankAlignment); Add(d,p,"PlayerAlignment",PlayerAlignment); Add(d,p,"TimeAlignment",TimeAlignment); Add(d,p,"TimeFormat",TimeFormat); Add(d,p,"ShowMilliseconds",ShowMilliseconds); Add(d,p,"HoursOnlyWhenNeeded",HoursOnlyWhenNeeded); Add(d,p,"PlayerNameMode",PlayerNameMode); Add(d,p,"ShowCountryFlag",ShowCountryFlag); Add(d,p,"HighlightBold",HighlightBold); Add(d,p,"ShowHighlightBackground",ShowHighlightBackground);
         AddColor(d,p,"HeaderTextColor",HeaderTextColor); AddColor(d,p,"RowTextColor",RowTextColor); AddColor(d,p,"RankTextColor",RankTextColor); AddColor(d,p,"TimeTextColor",TimeTextColor); AddColor(d,p,"BackgroundColor",BackgroundColor); AddColor(d,p,"AlternateRowColor",AlternateRowColor); AddColor(d,p,"HighlightTextColor",HighlightTextColor); AddColor(d,p,"HighlightBackgroundColor",HighlightBackgroundColor); return p;
     }
     public void SetSettings(XmlNode n)
     {
         StartRank=Read(n,"StartRank",1); EntryCount=Read(n,"EntryCount",Read(n,"TopCount",5)); SurroundingMode=Read(n,"SurroundingMode",false); SurroundingAbove=Read(n,"SurroundingAbove",2); SurroundingBelow=Read(n,"SurroundingBelow",2); HighlightUsername=Read(n,"HighlightUsername",""); RefreshMinutes=Read(n,"RefreshMinutes",5); RowHeight=Read(n,"RowHeight",27); RankWidth=Read(n,"RankWidth",70); TimeWidth=Read(n,"TimeWidth",85);
-        FilterPlatform=Read(n,"FilterPlatform",false); FilterRegion=Read(n,"FilterRegion",false); FilterVariables=Read(n,"FilterVariables",true); FilterSubcategories=Read(n,"FilterSubcategories",true); ShowHeader=Read(n,"ShowHeader",true); AlternateRows=Read(n,"AlternateRows",true); AlternateOpacity=Read(n,"AlternateOpacity",28); TimingMethod=Read(n,"TimingMethod","Leaderboard Default"); RankAlignment=Read(n,"RankAlignment","Left"); PlayerAlignment=Read(n,"PlayerAlignment","Left"); TimeAlignment=Read(n,"TimeAlignment","Right"); TimeFormat=Read(n,"TimeFormat","Colon (1:23:45)"); ShowMilliseconds=Read(n,"ShowMilliseconds",false); HoursOnlyWhenNeeded=Read(n,"HoursOnlyWhenNeeded",true); PlayerNameMode=Read(n,"PlayerNameMode","Speedrun.com username"); ShowCountryFlag=Read(n,"ShowCountryFlag",false); HighlightBold=Read(n,"HighlightBold",true);
+        FilterPlatform=Read(n,"FilterPlatform",false); FilterRegion=Read(n,"FilterRegion",false); FilterVariables=Read(n,"FilterVariables",true); FilterSubcategories=Read(n,"FilterSubcategories",true); ShowHeader=Read(n,"ShowHeader",true); AlternateRows=Read(n,"AlternateRows",true); AlternateOpacity=Read(n,"AlternateOpacity",28); TimingMethod=Read(n,"TimingMethod","Leaderboard Default"); RankAlignment=Read(n,"RankAlignment","Left"); PlayerAlignment=Read(n,"PlayerAlignment","Left"); TimeAlignment=Read(n,"TimeAlignment","Right"); TimeFormat=Read(n,"TimeFormat","Colon (1:23:45)"); ShowMilliseconds=Read(n,"ShowMilliseconds",false); HoursOnlyWhenNeeded=Read(n,"HoursOnlyWhenNeeded",true); PlayerNameMode=Read(n,"PlayerNameMode","Speedrun.com username"); ShowCountryFlag=Read(n,"ShowCountryFlag",false); HighlightBold=Read(n,"HighlightBold",true); ShowHighlightBackground=Read(n,"ShowHighlightBackground",true);
         HeaderTextColor=ReadColor(n,"HeaderTextColor",Color.White); RowTextColor=ReadColor(n,"RowTextColor",Color.White); RankTextColor=ReadColor(n,"RankTextColor",Color.White); TimeTextColor=ReadColor(n,"TimeTextColor",Color.White); BackgroundColor=ReadColor(n,"BackgroundColor",Color.Transparent); AlternateRowColor=ReadColor(n,"AlternateRowColor",Color.White); HighlightTextColor=ReadColor(n,"HighlightTextColor",Color.White); HighlightBackgroundColor=ReadColor(n,"HighlightBackgroundColor",Color.FromArgb(100,70,130,180)); RefreshColorButtons();
     }
     public int GetSettingsHashCode() => GetSettings(new XmlDocument()).InnerXml.GetHashCode();

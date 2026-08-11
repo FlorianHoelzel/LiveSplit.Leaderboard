@@ -5,6 +5,7 @@
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <AssemblyName>LiveSplit.Leaderboard</AssemblyName>
     <RootNamespace>LiveSplit.Leaderboard</RootNamespace>
+    <Version>0.2.2</Version>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="$(LsLibPath)/SpeedrunComSharp/src/SpeedrunComSharp/SpeedrunComSharp.csproj" Private="false" ExcludeAssets="runtime" />
