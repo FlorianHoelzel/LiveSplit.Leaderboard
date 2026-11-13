@@ -15,5 +15,5 @@ public sealed class LeaderboardFactory : IComponentFactory
     public string UpdateName => ComponentName;
     public string XMLURL => string.Empty;
     public string UpdateURL => string.Empty;
-    public Version Version => new Version(0, 1, 0);
+    public Version Version => typeof(LeaderboardFactory).Assembly.GetName().Version;
 }

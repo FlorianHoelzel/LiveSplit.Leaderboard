@@ -17,7 +17,6 @@ using System.Xml;
 
 namespace LiveSplit.Leaderboard.UI.Components;
 
-[GlobalFontConsumer(GlobalFont.TextFont)]
 public sealed class LeaderboardComponent : IComponent
 {
     private readonly LiveSplitState state; private readonly SpeedrunComClient client; private readonly GraphicsCache cache = new(); private readonly object dataLock = new();
