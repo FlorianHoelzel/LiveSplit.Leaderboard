@@ -37,12 +37,12 @@ public sealed class LeaderboardSettings : UserControl
     public bool HighlightBold { get => highlightBold.Checked; set => highlightBold.Checked = value; }
     public bool ShowHighlightBackground { get => showHighlightBackground.Checked; set => showHighlightBackground.Checked = value; }
     public string HighlightUsername { get => highlightUsername.Text.Trim(); set => highlightUsername.Text = value ?? ""; }
-    public string TimingMethod { get => Selected(timingMethod, "Leaderboard Default"); set => Select(timingMethod, value); }
-    public string RankAlignment { get => Selected(rankAlignment, "Left"); set => Select(rankAlignment, value); }
-    public string PlayerAlignment { get => Selected(playerAlignment, "Left"); set => Select(playerAlignment, value); }
-    public string TimeAlignment { get => Selected(timeAlignment, "Right"); set => Select(timeAlignment, value); }
-    public string TimeFormat { get => Selected(timeFormat, "Colon (1:23:45)"); set => Select(timeFormat, value); }
-    public string PlayerNameMode { get => Selected(playerNameMode, "Speedrun.com username"); set => Select(playerNameMode, value); }
+    public string TimingMethod { get => Selected(timingMethod, "Leaderboard Default"); set => Select(timingMethod, value, "Leaderboard Default"); }
+    public string RankAlignment { get => Selected(rankAlignment, "Left"); set => Select(rankAlignment, value, "Left"); }
+    public string PlayerAlignment { get => Selected(playerAlignment, "Left"); set => Select(playerAlignment, value, "Left"); }
+    public string TimeAlignment { get => Selected(timeAlignment, "Right"); set => Select(timeAlignment, value, "Right"); }
+    public string TimeFormat { get => Selected(timeFormat, "Colon (1:23:45)"); set => Select(timeFormat, value, "Colon (1:23:45)"); }
+    public string PlayerNameMode { get => Selected(playerNameMode, "Speedrun.com username"); set => Select(playerNameMode, value, "Speedrun.com username"); }
 
     public Color HeaderTextColor { get; set; } = Color.White;
     public Color RowTextColor { get; set; } = Color.White;
@@ -189,10 +189,24 @@ public sealed class LeaderboardSettings : UserControl
         highlightBackgroundColorButton.Enabled = showHighlightBackground.Checked;
     }
 
-    private Button ColorButton(Func<Color> get, Action<Color> set, bool alpha = false)
+    private Button ColorButton(Func<Color> get, Action<Color> set, bool preserveAlpha = false)
     {
         var b = new Button { Width = 104, Height = 25, Text = "Change…" };
-        b.Click += (_, __) => { using var d = new ColorDialog { Color = get(), FullOpen = true, AllowFullOpen = true }; if (d.ShowDialog(this) == DialogResult.OK) { set(alpha ? d.Color : Color.FromArgb(255, d.Color)); RefreshColorButtons(); } };
+        b.Click += (_, __) =>
+        {
+            var current = get();
+            using var dialog = new ColorDialog
+            {
+                Color = Color.FromArgb(255, current),
+                FullOpen = true,
+                AllowFullOpen = true
+            };
+            if (dialog.ShowDialog(this) != DialogResult.OK)
+                return;
+
+            set(Color.FromArgb(preserveAlpha ? current.A : 255, dialog.Color));
+            RefreshColorButtons();
+        };
         return b;
     }
     private void RefreshColorButtons()
@@ -203,7 +217,10 @@ public sealed class LeaderboardSettings : UserControl
     private static CheckBox Check(string text, bool value = false) => new() { Text = text, AutoSize = true, Checked = value };
     private static ComboBox Combo(params object[] values) { var c = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Width = 190 }; c.Items.AddRange(values); c.SelectedIndex = 0; return c; }
     private static string Selected(ComboBox c, string fallback) => c.SelectedItem?.ToString() ?? fallback;
-    private static void Select(ComboBox c, string value) { if (c.Items.Contains(value)) c.SelectedItem = value; else c.SelectedIndex = 0; }
+    private static void Select(ComboBox c, string value, string fallback)
+    {
+        c.SelectedItem = value != null && c.Items.Contains(value) ? value : fallback;
+    }
     private static NumericUpDown Number(decimal min, decimal max, decimal value) => new() { Minimum = min, Maximum = max, Value = value, Width = 80 };
     private static decimal Clamp(decimal value, decimal min, decimal max) => Math.Max(min, Math.Min(max, value));
     private static TabPage Page(string text) => new() { Text = text, Padding = new Padding(8), AutoScroll = true, UseVisualStyleBackColor = true };
@@ -260,21 +277,157 @@ public sealed class LeaderboardSettings : UserControl
 
     public XmlNode GetSettings(XmlDocument d)
     {
-        var p = d.CreateElement("Settings"); Add(d,p,"Version",3);
-        Add(d,p,"StartRank",StartRank); Add(d,p,"EntryCount",EntryCount); Add(d,p,"SurroundingMode",SurroundingMode); Add(d,p,"SurroundingAbove",SurroundingAbove); Add(d,p,"SurroundingBelow",SurroundingBelow); Add(d,p,"HighlightUsername",HighlightUsername);
-        Add(d,p,"RefreshMinutes",RefreshMinutes); Add(d,p,"RowHeight",RowHeight); Add(d,p,"RankWidth",RankWidth); Add(d,p,"TimeWidth",TimeWidth); Add(d,p,"FilterPlatform",FilterPlatform); Add(d,p,"FilterRegion",FilterRegion); Add(d,p,"FilterVariables",FilterVariables); Add(d,p,"FilterSubcategories",FilterSubcategories); Add(d,p,"ShowHeader",ShowHeader); Add(d,p,"AlternateRows",AlternateRows); Add(d,p,"AlternateOpacity",AlternateOpacity); Add(d,p,"TimingMethod",TimingMethod);
-        Add(d,p,"RankAlignment",RankAlignment); Add(d,p,"PlayerAlignment",PlayerAlignment); Add(d,p,"TimeAlignment",TimeAlignment); Add(d,p,"TimeFormat",TimeFormat); Add(d,p,"ShowMilliseconds",ShowMilliseconds); Add(d,p,"HoursOnlyWhenNeeded",HoursOnlyWhenNeeded); Add(d,p,"PlayerNameMode",PlayerNameMode); Add(d,p,"ShowCountryFlag",ShowCountryFlag); Add(d,p,"HighlightBold",HighlightBold); Add(d,p,"ShowHighlightBackground",ShowHighlightBackground);
-        AddColor(d,p,"HeaderTextColor",HeaderTextColor); AddColor(d,p,"RowTextColor",RowTextColor); AddColor(d,p,"RankTextColor",RankTextColor); AddColor(d,p,"TimeTextColor",TimeTextColor); AddColor(d,p,"BackgroundColor",BackgroundColor); AddColor(d,p,"AlternateRowColor",AlternateRowColor); AddColor(d,p,"HighlightTextColor",HighlightTextColor); AddColor(d,p,"HighlightBackgroundColor",HighlightBackgroundColor); return p;
+        var p = d.CreateElement("Settings");
+        Add(d, p, "Version", 3);
+        Add(d, p, "StartRank", StartRank);
+        Add(d, p, "EntryCount", EntryCount);
+        Add(d, p, "SurroundingMode", SurroundingMode);
+        Add(d, p, "SurroundingAbove", SurroundingAbove);
+        Add(d, p, "SurroundingBelow", SurroundingBelow);
+        Add(d, p, "HighlightUsername", HighlightUsername);
+        Add(d, p, "RefreshMinutes", RefreshMinutes);
+        Add(d, p, "RowHeight", RowHeight);
+        Add(d, p, "RankWidth", RankWidth);
+        Add(d, p, "TimeWidth", TimeWidth);
+        Add(d, p, "FilterPlatform", FilterPlatform);
+        Add(d, p, "FilterRegion", FilterRegion);
+        Add(d, p, "FilterVariables", FilterVariables);
+        Add(d, p, "FilterSubcategories", FilterSubcategories);
+        Add(d, p, "ShowHeader", ShowHeader);
+        Add(d, p, "AlternateRows", AlternateRows);
+        Add(d, p, "AlternateOpacity", AlternateOpacity);
+        Add(d, p, "TimingMethod", TimingMethod);
+        Add(d, p, "RankAlignment", RankAlignment);
+        Add(d, p, "PlayerAlignment", PlayerAlignment);
+        Add(d, p, "TimeAlignment", TimeAlignment);
+        Add(d, p, "TimeFormat", TimeFormat);
+        Add(d, p, "ShowMilliseconds", ShowMilliseconds);
+        Add(d, p, "HoursOnlyWhenNeeded", HoursOnlyWhenNeeded);
+        Add(d, p, "PlayerNameMode", PlayerNameMode);
+        Add(d, p, "ShowCountryFlag", ShowCountryFlag);
+        Add(d, p, "HighlightBold", HighlightBold);
+        Add(d, p, "ShowHighlightBackground", ShowHighlightBackground);
+        AddColor(d, p, "HeaderTextColor", HeaderTextColor);
+        AddColor(d, p, "RowTextColor", RowTextColor);
+        AddColor(d, p, "RankTextColor", RankTextColor);
+        AddColor(d, p, "TimeTextColor", TimeTextColor);
+        AddColor(d, p, "BackgroundColor", BackgroundColor);
+        AddColor(d, p, "AlternateRowColor", AlternateRowColor);
+        AddColor(d, p, "HighlightTextColor", HighlightTextColor);
+        AddColor(d, p, "HighlightBackgroundColor", HighlightBackgroundColor);
+        return p;
     }
+
     public void SetSettings(XmlNode n)
     {
-        StartRank=Read(n,"StartRank",1); EntryCount=Read(n,"EntryCount",Read(n,"TopCount",5)); SurroundingMode=Read(n,"SurroundingMode",false); SurroundingAbove=Read(n,"SurroundingAbove",2); SurroundingBelow=Read(n,"SurroundingBelow",2); HighlightUsername=Read(n,"HighlightUsername",""); RefreshMinutes=Read(n,"RefreshMinutes",5); RowHeight=Read(n,"RowHeight",27); RankWidth=Read(n,"RankWidth",70); TimeWidth=Read(n,"TimeWidth",85);
-        FilterPlatform=Read(n,"FilterPlatform",false); FilterRegion=Read(n,"FilterRegion",false); FilterVariables=Read(n,"FilterVariables",true); FilterSubcategories=Read(n,"FilterSubcategories",true); ShowHeader=Read(n,"ShowHeader",true); AlternateRows=Read(n,"AlternateRows",true); AlternateOpacity=Read(n,"AlternateOpacity",28); TimingMethod=Read(n,"TimingMethod","Leaderboard Default"); RankAlignment=Read(n,"RankAlignment","Left"); PlayerAlignment=Read(n,"PlayerAlignment","Left"); TimeAlignment=Read(n,"TimeAlignment","Right"); TimeFormat=Read(n,"TimeFormat","Colon (1:23:45)"); ShowMilliseconds=Read(n,"ShowMilliseconds",false); HoursOnlyWhenNeeded=Read(n,"HoursOnlyWhenNeeded",true); PlayerNameMode=Read(n,"PlayerNameMode","Speedrun.com username"); ShowCountryFlag=Read(n,"ShowCountryFlag",false); HighlightBold=Read(n,"HighlightBold",true); ShowHighlightBackground=Read(n,"ShowHighlightBackground",true);
-        HeaderTextColor=ReadColor(n,"HeaderTextColor",Color.White); RowTextColor=ReadColor(n,"RowTextColor",Color.White); RankTextColor=ReadColor(n,"RankTextColor",Color.White); TimeTextColor=ReadColor(n,"TimeTextColor",Color.White); BackgroundColor=ReadColor(n,"BackgroundColor",Color.Transparent); AlternateRowColor=ReadColor(n,"AlternateRowColor",Color.White); HighlightTextColor=ReadColor(n,"HighlightTextColor",Color.White); HighlightBackgroundColor=ReadColor(n,"HighlightBackgroundColor",Color.FromArgb(100,70,130,180)); RefreshColorButtons();
+        StartRank = Read(n, "StartRank", 1);
+        EntryCount = Read(n, "EntryCount", Read(n, "TopCount", 5));
+        SurroundingMode = Read(n, "SurroundingMode", false);
+        SurroundingAbove = Read(n, "SurroundingAbove", 2);
+        SurroundingBelow = Read(n, "SurroundingBelow", 2);
+        HighlightUsername = Read(n, "HighlightUsername", "");
+        RefreshMinutes = Read(n, "RefreshMinutes", 5);
+        RowHeight = Read(n, "RowHeight", 27);
+        RankWidth = Read(n, "RankWidth", 70);
+        TimeWidth = Read(n, "TimeWidth", 85);
+        FilterPlatform = Read(n, "FilterPlatform", false);
+        FilterRegion = Read(n, "FilterRegion", false);
+        FilterVariables = Read(n, "FilterVariables", true);
+        FilterSubcategories = Read(n, "FilterSubcategories", true);
+        ShowHeader = Read(n, "ShowHeader", true);
+        AlternateRows = Read(n, "AlternateRows", true);
+        AlternateOpacity = Read(n, "AlternateOpacity", 28);
+        TimingMethod = Read(n, "TimingMethod", "Leaderboard Default");
+        RankAlignment = Read(n, "RankAlignment", "Left");
+        PlayerAlignment = Read(n, "PlayerAlignment", "Left");
+        TimeAlignment = Read(n, "TimeAlignment", "Right");
+        TimeFormat = Read(n, "TimeFormat", "Colon (1:23:45)");
+        ShowMilliseconds = Read(n, "ShowMilliseconds", false);
+        HoursOnlyWhenNeeded = Read(n, "HoursOnlyWhenNeeded", true);
+        PlayerNameMode = Read(n, "PlayerNameMode", "Speedrun.com username");
+        ShowCountryFlag = Read(n, "ShowCountryFlag", false);
+        HighlightBold = Read(n, "HighlightBold", true);
+        ShowHighlightBackground = Read(n, "ShowHighlightBackground", true);
+        HeaderTextColor = ReadColor(n, "HeaderTextColor", Color.White);
+        RowTextColor = ReadColor(n, "RowTextColor", Color.White);
+        RankTextColor = ReadColor(n, "RankTextColor", Color.White);
+        TimeTextColor = ReadColor(n, "TimeTextColor", Color.White);
+        BackgroundColor = ReadColor(n, "BackgroundColor", Color.Transparent);
+        AlternateRowColor = ReadColor(n, "AlternateRowColor", Color.White);
+        HighlightTextColor = ReadColor(n, "HighlightTextColor", Color.White);
+        HighlightBackgroundColor = ReadColor(n, "HighlightBackgroundColor", Color.FromArgb(100, 70, 130, 180));
+        RefreshColorButtons();
     }
-    public int GetSettingsHashCode() => GetSettings(new XmlDocument()).InnerXml.GetHashCode();
-    private static void Add(XmlDocument d, XmlElement p, string n, object v) { var e=d.CreateElement(n); e.InnerText=Convert.ToString(v,CultureInfo.InvariantCulture); p.AppendChild(e); }
-    private static void AddColor(XmlDocument d, XmlElement p, string n, Color c) => Add(d,p,n,c.ToArgb());
-    private static Color ReadColor(XmlNode n,string key,Color f) => Color.FromArgb(Read(n,key,f.ToArgb()));
-    private static T Read<T>(XmlNode n,string key,T f) { string s=n?[key]?.InnerText; if(string.IsNullOrWhiteSpace(s)) return f; try { if(typeof(T)==typeof(bool)) return (T)(object)bool.Parse(s); if(typeof(T)==typeof(int)) return (T)(object)int.Parse(s,CultureInfo.InvariantCulture); if(typeof(T)==typeof(string)) return (T)(object)s; } catch{} return f; }
+
+    public int GetSettingsHashCode()
+    {
+        unchecked
+        {
+            int hash = 17;
+            hash = hash * 31 + StartRank.GetHashCode();
+            hash = hash * 31 + EntryCount.GetHashCode();
+            hash = hash * 31 + SurroundingMode.GetHashCode();
+            hash = hash * 31 + SurroundingAbove.GetHashCode();
+            hash = hash * 31 + SurroundingBelow.GetHashCode();
+            hash = hash * 31 + HighlightUsername.GetHashCode();
+            hash = hash * 31 + RefreshMinutes.GetHashCode();
+            hash = hash * 31 + RowHeight.GetHashCode();
+            hash = hash * 31 + RankWidth.GetHashCode();
+            hash = hash * 31 + TimeWidth.GetHashCode();
+            hash = hash * 31 + FilterPlatform.GetHashCode();
+            hash = hash * 31 + FilterRegion.GetHashCode();
+            hash = hash * 31 + FilterVariables.GetHashCode();
+            hash = hash * 31 + FilterSubcategories.GetHashCode();
+            hash = hash * 31 + ShowHeader.GetHashCode();
+            hash = hash * 31 + AlternateRows.GetHashCode();
+            hash = hash * 31 + AlternateOpacity.GetHashCode();
+            hash = hash * 31 + TimingMethod.GetHashCode();
+            hash = hash * 31 + RankAlignment.GetHashCode();
+            hash = hash * 31 + PlayerAlignment.GetHashCode();
+            hash = hash * 31 + TimeAlignment.GetHashCode();
+            hash = hash * 31 + TimeFormat.GetHashCode();
+            hash = hash * 31 + ShowMilliseconds.GetHashCode();
+            hash = hash * 31 + HoursOnlyWhenNeeded.GetHashCode();
+            hash = hash * 31 + PlayerNameMode.GetHashCode();
+            hash = hash * 31 + ShowCountryFlag.GetHashCode();
+            hash = hash * 31 + HighlightBold.GetHashCode();
+            hash = hash * 31 + ShowHighlightBackground.GetHashCode();
+            hash = hash * 31 + HeaderTextColor.ToArgb();
+            hash = hash * 31 + RowTextColor.ToArgb();
+            hash = hash * 31 + RankTextColor.ToArgb();
+            hash = hash * 31 + TimeTextColor.ToArgb();
+            hash = hash * 31 + BackgroundColor.ToArgb();
+            hash = hash * 31 + AlternateRowColor.ToArgb();
+            hash = hash * 31 + HighlightTextColor.ToArgb();
+            hash = hash * 31 + HighlightBackgroundColor.ToArgb();
+            return hash;
+        }
+    }
+
+    private static void Add(XmlDocument document, XmlElement parent, string name, object value)
+    {
+        var element = document.CreateElement(name);
+        element.InnerText = Convert.ToString(value, CultureInfo.InvariantCulture);
+        parent.AppendChild(element);
+    }
+
+    private static void AddColor(XmlDocument document, XmlElement parent, string name, Color color)
+        => Add(document, parent, name, color.ToArgb());
+
+    private static Color ReadColor(XmlNode node, string key, Color fallback)
+        => Color.FromArgb(Read(node, key, fallback.ToArgb()));
+
+    private static int Read(XmlNode node, string key, int fallback)
+        => int.TryParse(node?[key]?.InnerText, NumberStyles.Integer, CultureInfo.InvariantCulture, out int value)
+            ? value
+            : fallback;
+
+    private static bool Read(XmlNode node, string key, bool fallback)
+        => bool.TryParse(node?[key]?.InnerText, out bool value) ? value : fallback;
+
+    private static string Read(XmlNode node, string key, string fallback)
+    {
+        string value = node?[key]?.InnerText;
+        return string.IsNullOrWhiteSpace(value) ? fallback : value;
+    }
 }
