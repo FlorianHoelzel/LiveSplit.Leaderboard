@@ -1,5 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <LsRoot Condition="'$(LsRoot)' == ''">$(MSBuildThisFileDirectory)..\..\..\LiveSplit</LsRoot>
+    <LsSrcPath>$(LsRoot)\src</LsSrcPath>
+    <LsLibPath>$(LsRoot)\lib</LsLibPath>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
     <TargetFramework>net4.8.1</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
     <EnableDynamicLoading>true</EnableDynamicLoading>

@@ -37,3 +37,4 @@ A customizable LiveSplit component that displays Speedrun.com leaderboard entrie
 
 ```text
 Add → Information → Leaderboard
+```
